@@ -2,54 +2,66 @@
 {{ title }}
 <table>
     <tr>
-        <td>ID</td>    
+        <td>ID</td>
         <td>Имя</td>
         <td>Фамилия</td>
-        <td>Возраст</td>    
+        <td>Возраст</td>
+        <td>Компания</td>
         <td></td>
     </tr>
     <tr
         v-for="user in users"
         :key="user.id"
     >
-        <td>{{ user.id }}</td>    
-        <td>{{ user.firstname}}</td>
+        <td>{{ user.id }}</td>
+        <td>{{ user.firstname }}</td>
         <td>{{ user.secondname }}</td>
-        <td>{{ user.age }}</td>    
+        <td>{{ user.age }}</td>
+        <td>{{ user.title }}</td>
         <td>
             <button
                 @click="editUser(user)"
-                >📝</button>
+            >📝</button>
             <button
                 @click="deleteUser(user.id)"
-                >✖
-            </button>
+            >❌</button>
         </td>
     </tr>
 </table>
 <form>
-    <input 
-        type="text" 
+    <input
+        type="text"
         placeholder="Имя"
         v-model="firstname"
-        >
-    <input 
-        type="text" 
+    >
+    <input
+        type="text"
         placeholder="Фамилия"
         v-model="secondname"
-        >
-    <input 
-        type="text" 
+    >
+    <input
+        type="number"
         placeholder="Возраст"
         v-model="age"
-        >
+    >
+    <select
+        v-model="company_id"
+    >
+        <option 
+            v-for="company in companies"
+            :key="company.id"
+            :value="company.id"
+            
+        >{{ company.title }}</option>
+    </select>
+
     <button
         @click.prevent="addUser"
     >Создать пользователя</button>
-        <button
-        v-if
+    <button
+        v-if="current"
         @click.prevent="updateUser"
-    >Редактировать пользователя</button>
+    >Обновить пользователя</button>
 </form>
 </template>
 
@@ -60,14 +72,18 @@ data() {
     return {
         title: '',
         users: [],
+        companies: [],
         current: null,
         firstname: '',
         secondname: '',
         age: null,
+        company_id: null,
     }
 },
 mounted() {
     this.loadTitle();
+    this.loadCompanies();
+    
 },
 methods: {
     async loadTitle() {
@@ -75,35 +91,39 @@ methods: {
         this.title = result.data.title
         this.users = result.data.users
     },
+        async loadCompanies() {
+        const result = await axios.get('http://mysql.be/companies.php')
+        this.companies = result.data.companies
+    },
     async addUser() {
         await axios.post('http://mysql.be/index.php', {
             firstname: this.firstname,
             secondname: this.secondname,
-            age: this.age
+            age: this.age,
+            company_id: this.company_id
         })
-        this.firstname = '';
-        this.secondname = '';
-        this.age = null;
-        this.loadTitle();         
-    }, 
-    clearForm () {
-        this.firstname = '';
-        this.secondname = '';
-        this.age = null;
-        this.current = null;
+        this.clearForm();
+        this.loadTitle();
+        this.loadCompanies();
     },
-
+    clearForm() {
+        this.current = null;
+        this.firstname = '';
+        this.secondname = '';
+        this.age = null;
+        this.company_id = ''
+    },
     editUser(user) {
         this.firstname = user.firstname;
         this.secondname = user.secondname;
         this.age = user.age;
         this.current = user.id;
-
+        this.company_id = user.company_id;
     },
     async deleteUser(id) {
         if(confirm('Удалить?')) {
             await axios.delete('http://mysql.be/index.php?id=' + id);
-            this.loadTitle(); 
+            this.loadTitle();
         }
     },
     async updateUser() {
@@ -112,10 +132,11 @@ methods: {
             firstname: this.firstname,
             secondname: this.secondname,
             age: this.age,
-
+            company_id: this.company_id
         });
         this.clearForm();
-        this.loadForm();
+        this.loadTitle();
+        this.loadCompanies();
     }
 }
 }
@@ -125,6 +146,7 @@ methods: {
     table, td {
         border: 1px solid black;
         color: rgb(101, 7, 124);
+        
     }
     
     table {
@@ -135,6 +157,7 @@ methods: {
 
     td {
         padding: 5px 10px;
+        
     }
 
     button {
@@ -143,5 +166,6 @@ methods: {
         background-color: rgb(6, 226, 197);
         border-radius: 20px;
         color: rgb(101, 7, 124);
+        cursor: pointer;
     }
 </style>
